@@ -46,6 +46,7 @@ jobs:
           ECR_REPOSITORY: develop/test-app
           IMAGE_NAME: test-app
           IMAGE_TAG: ${{ steps.vars.outputs.branch }}_${{ steps.vars.outputs.short_sha }}
+          BUILDX_NO_DEFAULT_ATTESTATIONS: 1
         run: |
           # Build locally as test-app:<branch>_<sha> as requested
           docker build -t $IMAGE_NAME:$IMAGE_TAG .
@@ -53,3 +54,35 @@ jobs:
           # Tag for ECR and push
           docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Sign and attest image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: develop/test-app
+          IMAGE_TAG: ${{ steps.vars.outputs.branch }}_${{ steps.vars.outputs.short_sha }}
+        run: |
+          IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          # Keyless sign the image
+          cosign sign --yes $IMAGE_URI
+          
+          # Create a basic SLSA provenance predicate
+          cat <<EOF > predicate.json
+          {
+            "builder": { "id": "https://github.com/actions/runner" },
+            "buildType": "https://github.com/actions/runner/docker-build",
+            "invocation": {
+              "configSource": {
+                "uri": "git+https://github.com/${{ github.repository }}",
+                "digest": { "sha1": "${{ github.sha }}" },
+                "entryPoint": "${{ github.workflow }}"
+              }
+            }
+          }
+          EOF
+          
+          # Attest the image with the provenance
+          cosign attest --yes --predicate predicate.json --type slsaprovenance $IMAGE_URI
