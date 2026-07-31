@@ -1,4 +1,4 @@
-FROM nginx:1.25:alpine
+FROM nginx:alpine3.24-perl
 
 COPY ./config/app_nginx.conf /etc/nginx/conf.d/default.conf
 
