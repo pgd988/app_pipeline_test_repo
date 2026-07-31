@@ -1,0 +1,51 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    # Required for OIDC authentication with AWS
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Note: Ensure you provide the correct IAM Role ARN here or via secrets
+          #role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: 
+          aws-region: eu-north-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get short commit hash and branch name
+        id: vars
+        run: |
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          # Replace slashes with dashes in branch name to be safe for docker tags
+          BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr '/' '-')
+          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: develop/test-app
+          IMAGE_NAME: test-app
+          IMAGE_TAG: ${{ steps.vars.outputs.branch }}_${{ steps.vars.outputs.short_sha }}
+        run: |
+          # Build locally as test-app:<branch>_<sha> as requested
+          docker build -t $IMAGE_NAME:$IMAGE_TAG .
+          
+          # Tag for ECR and push
+          docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
