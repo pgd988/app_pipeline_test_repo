@@ -49,7 +49,7 @@ jobs:
           BUILDX_NO_DEFAULT_ATTESTATIONS: 1
         run: |
           # Build locally as test-app:<branch>_<sha> as requested
-          docker build -t $IMAGE_NAME:$IMAGE_TAG .
+          docker build --provenance=false -t $IMAGE_NAME:$IMAGE_TAG .
           
           # Tag for ECR and push
           docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
