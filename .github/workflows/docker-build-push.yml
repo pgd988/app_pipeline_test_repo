@@ -21,7 +21,7 @@ jobs:
         with:
           # Note: Ensure you provide the correct IAM Role ARN here or via secrets
           #role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          role-to-assume: 
+          role-to-assume: arn:aws:iam::037613907583:role/GitHubActionsRole-app-pipeline
           aws-region: eu-north-1
 
       - name: Login to Amazon ECR
