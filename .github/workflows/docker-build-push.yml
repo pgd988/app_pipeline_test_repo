@@ -63,7 +63,7 @@ jobs:
     # Only run the deployment job if this is the main branch
     if: github.ref == 'refs/heads/main'
     # Use the protected GitHub Environment for security
-    environment: production
+    environment: production_test
     steps:
       - name: Checkout ArgoCD repository
         uses: actions/checkout@v4
