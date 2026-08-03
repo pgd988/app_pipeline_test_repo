@@ -35,9 +35,9 @@ jobs:
             DIFF_ARGS="HEAD~1 HEAD"
           fi
           
-          if git diff --name-only $DIFF_ARGS 2>/dev/null | grep -q 'database/'; then
+          if git diff --name-only $DIFF_ARGS 2>/dev/null | grep -q '^database/'; then
             echo "database=true" >> $GITHUB_OUTPUT
-          elif git show --name-only ${{ github.sha }} | grep -q 'database/'; then
+          elif git show --name-only ${{ github.sha }} | grep -q '^database/'; then
             echo "database=true" >> $GITHUB_OUTPUT
           else
             echo "database=false" >> $GITHUB_OUTPUT
