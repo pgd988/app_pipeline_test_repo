@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 echo "The Migrations Job container has started"
 sleep 60
